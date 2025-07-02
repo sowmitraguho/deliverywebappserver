@@ -18,39 +18,56 @@ const uri = process.env.MONGODB_URI;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
+    serverApi: {
+        version: ServerApiVersion.v1,
+        strict: true,
+        deprecationErrors: true,
+    }
 });
 
-//Database connection
-const productsInfoDB = client.db('DeliveryWebApp').collection("productsInfoDB");
+
 
 
 async function run() {
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    try {
+        // Connect the client to the server	(optional starting in v4.7)
+        await client.connect();
 
-    // post parcel data to mongodb
-    app.post('/parcels', async(req,res)=>{
-        const data = req.body;
-        const result = await productsInfoDB.insertOne(data);
-       // console.log(result);
-        res.send(result);
-    });
+        //Database connection
+        const productsInfoDB = client.db('DeliveryWebApp').collection("productsInfoDB");
+
+        // post parcel data to mongodb
+        app.post('/parcels', async (req, res) => {
+            try {
+                const data = req.body;
+                const result = await productsInfoDB.insertOne(data);
+                res.status(201).send(result);
+            } catch (err) {
+                console.error('Insert failed:', err);
+                res.status(500).send({ message: 'Insert failed' });
+            }
+        });
+
+        // get parcel data from mongodb
+        app.get('/parcels', async (req, res) => {
+            try {
+                const allParcels = await productsInfoDB.find().toArray();
+                res.send(allParcels);
+            } catch (err) {
+                console.error('Fetch failed:', err);
+                res.status(500).send({ message: 'Fetch failed' });
+            }
+        });
 
 
 
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
-  }
+        // Send a ping to confirm a successful connection
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    } finally {
+        // Ensures that the client will close when you finish/error
+        // await client.close();
+    }
 }
 run().catch(console.dir);
 
@@ -61,10 +78,10 @@ run().catch(console.dir);
 
 // Root Route
 app.get('/', (req, res) => {
-  res.send('Delivery App API is running...');
+    res.send('Delivery App API is running...');
 });
 
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
